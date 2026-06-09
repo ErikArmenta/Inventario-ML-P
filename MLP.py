@@ -19,9 +19,9 @@ if uploaded_file is not None:
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
-            
+
         st.success("¡Archivo cargado y procesado con éxito!")
-        
+
         # Limpieza rápida: asegurar que las columnas numéricas no traigan strings raros
         cols_numericas = ['Lead Time', 'Cost', 'weekly use', 'Intransit', '1PPW', 'DOCK', 'PWIP', 'QCHH', 'SL2P', 'Total Weeks']
         for col in cols_numericas:
@@ -31,7 +31,7 @@ if uploaded_file is not None:
         # ==========================================
         # MOTOR DE CÁLCULO (Fórmulas al pie de la letra)
         # ==========================================
-        
+
         # R: Total PZ = Suma(L2:Q2)
         loc_cols = ['Intransit', '1PPW', 'DOCK', 'PWIP', 'QCHH', 'SL2P']
         df['Total PZ Calculado'] = df[[c for c in loc_cols if c in df.columns]].sum(axis=1)
@@ -49,10 +49,10 @@ if uploaded_file is not None:
         if 'Total Weeks' in df.columns:
             # AC: Weeks out = Total Weeks - Target
             df['Weeks Out'] = df['Total Weeks'] - df['Target']
-            
+
             # AD: Pz out = Weeks out * weekly use
             df['Pz Out'] = df['Weeks Out'] * df['weekly use']
-            
+
             # AE: Total USD out = Pz out * Cost
             df['Total USD Out'] = df['Pz Out'] * df['Cost']
 
@@ -60,15 +60,15 @@ if uploaded_file is not None:
         # DASHBOARD & KPIs
         # ==========================================
         st.markdown("---")
-        
+
         # Métricas principales
         col1, col2, col3, col4 = st.columns(4)
-        
+
         total_inventory_usd = df['Total Amount Calculado'].sum()
         total_target_usd = df['Target Total USD'].sum()
         total_usd_out = df['Total USD Out'].sum() if 'Total USD Out' in df.columns else 0
         total_pz = df['Total PZ Calculado'].sum()
-        
+
         with col1:
             st.metric("Valor Total Inventario", f"${total_inventory_usd:,.2f}")
         with col2:
@@ -89,9 +89,9 @@ if uploaded_file is not None:
             # Filtramos los que tienen mayor exceso de dinero y los ordenamos
             df_critical = df.nlargest(15, 'Total USD Out') if 'Total USD Out' in df.columns else df.head(15)
             fig_bar = px.bar(
-                df_critical, 
-                x='Total USD Out', 
-                y='Number', 
+                df_critical,
+                x='Total USD Out',
+                y='Number',
                 orientation='h',
                 color='Total USD Out',
                 color_continuous_scale='Reds',
@@ -104,9 +104,9 @@ if uploaded_file is not None:
             st.subheader("⚖️ Semanas Actuales vs Óptimo (Target) por N° Parte")
             # Un scatter plot para ver rápidamente qué partes están fuera del límite
             fig_scatter = px.scatter(
-                df, 
-                x='Target', 
-                y='Total Weeks', 
+                df,
+                x='Target',
+                y='Total Weeks',
                 hover_data=['Number', 'Cost', 'weekly use'],
                 color='Weeks Out',
                 color_continuous_scale='RdYlGn_r' # Rojo para desviaciones altas
@@ -118,7 +118,7 @@ if uploaded_file is not None:
             st.plotly_chart(fig_scatter, use_container_width=True)
 
         # Vista de tabla interactiva al final para los analistas
-        st.subheader("📑 Tabla Detallada (Data Entry Simulada)")
+        st.subheader("📑 Tabla Detallada")
         # Mostramos las columnas más relevantes
         cols_to_show = ['Number', 'Description', 'Lead Time', 'Cost', 'weekly use', 'Total PZ Calculado', 'Target', 'Total Weeks', 'Weeks Out', 'Total USD Out']
         st.dataframe(df[[c for c in cols_to_show if c in df.columns]], use_container_width=True)
